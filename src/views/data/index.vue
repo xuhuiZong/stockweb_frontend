@@ -1,5 +1,5 @@
 <template>
-  <div :class="['main-container', { 'sidebar-collapsed': isSidebarCollapsed }]">
+  <div class="dynamic-container">
     <!-- 添加侧边栏 -->
     <div class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
       <button class="toggle-btn" @click="toggleSidebar">☰</button>
@@ -20,6 +20,13 @@
     <div class="chat-container">
       <div class="chat-log">
         <div v-for="(msg, index) in chatLog" :key="index" :class="msg.role">
+          <div v-if="msg.role === 'assistant' && msg.reasoning">
+            <button @click="toggleReasoning(index)">{{ msg.showReasoning ? '隐藏' : '显示' }} Reasoning</button>
+            <div v-if="msg.showReasoning" class="reasoning-content">
+              <strong>Reasoning：</strong>
+              <span>{{ msg.reasoning }}</span>
+            </div>
+          </div>
           <strong>{{ msg.role === 'user' ? '用户' : '助手' }}：</strong>
           <span>{{ msg.content }}</span>
         </div>
@@ -51,7 +58,9 @@ export default {
       loading: false,
       topics: [], // 所有话题列表
       currentTopicId: null, // 当前选中的话题ID
-      isSidebarCollapsed: false // 控制侧边栏的展开与折叠
+      isSidebarCollapsed: false, // 控制侧边栏的展开与折叠
+      reasoningLog: [], // Reasoning内容
+      showReasoning: false // 控制Reasoning显示与隐藏
     }
   },
   methods: {
@@ -80,7 +89,9 @@ export default {
     async switchTopic(topicId) {
       this.currentTopicId = topicId
       const topic = this.topics.find(t => t.id === topicId)
+      console.log('topic:', topic)
       this.chatLog = topic.message_content || []
+      this.reasoningLog = topic.reasoning_content || []
     },
 
     // 发送消息
@@ -119,6 +130,11 @@ export default {
     // 切换侧边栏的展开与折叠
     toggleSidebar() {
       this.isSidebarCollapsed = !this.isSidebarCollapsed
+    },
+
+    // 切换Reasoning显示与隐藏
+    toggleReasoning(index) {
+      this.$set(this.chatLog[index], 'showReasoning', !this.chatLog[index].showReasoning)
     }
   },
   mounted() {
@@ -128,15 +144,22 @@ export default {
 </script>
 
 <style scoped>
-.main-container {
+
+.dynamic-container {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 1500px;
+  margin: 10px auto;
+  transition: all 0.3s ease;
   display: flex;
   gap: 20px;
-  width: calc(100% - 200px); /* 假设侧边栏宽度为200px */
+  width: calc(100% - 20px); /* 假设侧边栏宽度为200px */
   height: calc(100vh - 20px);
-  transition: margin-left 0.3s ease;
 }
 
-.main-container.sidebar-collapsed {
+.dynamic-container.sidebar-collapsed {
   width: calc(100% - 40px); /* 当侧边栏折叠时调整 */
 }
 
@@ -273,5 +296,17 @@ export default {
   text-align: center;
   color: #666;
   margin-top: 10px;
+}
+
+.reasoning-container {
+  margin-top: 20px;
+}
+
+.reasoning-content {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
 }
 </style>
